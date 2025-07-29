@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'freqs.csv'
+      - 'create_radio_guide.py'
   workflow_dispatch:  # Allow manual trigger
 
 permissions:
@@ -42,7 +43,7 @@ jobs:
         if [ ! -f "Home.md" ]; then
           echo "# BM Freaqs Wiki" > Home.md
           echo "" >> Home.md
-          echo "Welcome to the Black Rock Radio guide wiki!" >> Home.md
+          echo "Black Rock Radio guide!" >> Home.md
         fi
         
     - name: Copy generated image to wiki
@@ -70,22 +71,10 @@ jobs:
         
         1. Download the image above
         2. Print as a 5" x 3" sticker 
-        3. Stick it on your radio or camp setup
-        4. Tune in to these awesome stations at Burning Man!
-        
-        ### Stations Included
-        
+        3. Stick it on your head
+        4. Tune in to these awesome stations!
+                
         EOF
-        
-        # Add frequency data to the wiki page
-        echo "" >> Radio-Guide.md
-        echo "| Frequency | Station |" >> Radio-Guide.md
-        echo "|-----------|---------|" >> Radio-Guide.md
-        
-        # Parse CSV and add to markdown table
-        tail -n +2 ../freqs.csv | while IFS=',' read -r freq station; do
-          echo "| $freq | $station |" >> Radio-Guide.md
-        done
         
         echo "" >> Radio-Guide.md
         echo "_Last updated: $(date)_" >> Radio-Guide.md
