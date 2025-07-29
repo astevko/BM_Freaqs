@@ -139,13 +139,17 @@ def create_radio_guide(image_path, csv_path,
     
     # Draw second column
     for i, freq_data in enumerate(col2_freqs):
+
         y_pos = content_start_y + (i * total_row_height)
         if y_pos + total_row_height > bg_top + bg_height - bottom_margin:
             break
             
         # Frequency - now yellow
+        text_color = (255, 255, 0, 255)
+        if freq_data['freq'] == 'Live Streams':
+            text_color = (255, 255, 255, 255)
         draw.text((col2_x, y_pos), freq_data['freq'], 
-                  fill=(255, 255, 0, 255), font=freq_font)
+                  fill=text_color, font=freq_font)
         
         # Station - now yellow (truncate if too long for available width)
         station_text = freq_data['station']
