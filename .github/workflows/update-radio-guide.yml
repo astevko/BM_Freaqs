@@ -33,17 +33,29 @@ jobs:
       run: |
         python3 create_radio_guide.py
         
-    - name: Clone wiki repository
+    - name: Clone or create wiki repository
       run: |
-        git clone https://github.com/${{ github.repository }}.wiki.git wiki
+        if git clone https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.wiki.git wiki; then
+          echo "Wiki repository cloned successfully"
+        else
+          echo "Wiki doesn't exist yet, creating directory"
+          mkdir -p wiki
+          cd wiki
+          git init
+          git remote add origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.wiki.git
+        fi
         
     - name: Setup wiki if empty
       run: |
         cd wiki
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
         if [ ! -f "Home.md" ]; then
           echo "# BM Freaqs Wiki" > Home.md
           echo "" >> Home.md
           echo "Black Rock Radio guide!" >> Home.md
+          git add Home.md
+          git commit -m "Initialize wiki" || true
         fi
         
     - name: Copy generated image to wiki
@@ -86,7 +98,8 @@ jobs:
         git config user.email "actions@github.com"
         git add .
         git commit -m "Update radio guide - $(date)" || exit 0
-        git push origin master
+        # Try master first, then main
+        git push origin HEAD:master 2>/dev/null || git push origin HEAD:main
         
     - name: Update main repository with new image
       run: |
