@@ -1,0 +1,108 @@
+name: Update Radio Guide
+
+on:
+  push:
+    paths:
+      - 'freqs.csv'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  update-radio-guide:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Generate radio guide
+      run: |
+        python3 create_radio_guide.py
+        
+    - name: Clone wiki repository
+      run: |
+        git clone https://github.com/${{ github.repository }}.wiki.git wiki
+        
+    - name: Setup wiki if empty
+      run: |
+        cd wiki
+        if [ ! -f "Home.md" ]; then
+          echo "# BM Freaqs Wiki" > Home.md
+          echo "" >> Home.md
+          echo "Welcome to the Black Rock Radio guide wiki!" >> Home.md
+        fi
+        
+    - name: Copy generated image to wiki
+      run: |
+        cp radio_guide_2025.jpg wiki/
+        
+    - name: Create/Update Radio Guide wiki page
+      run: |
+        cd wiki
+        cat > Radio-Guide.md << 'EOF'
+        # Black Rock Radio 2025 Guide
+        
+        ![Radio Guide](radio_guide_2025.jpg)
+        
+        ## Generated Radio Frequency Guide
+        
+        This guide contains all the radio stations for Burning Man 2025:
+        
+        - **Format**: 5" x 3" landscape sticker
+        - **Resolution**: 300 DPI for high-quality printing
+        - **Layout**: Two-column frequency and station listing
+        - **Background**: The Man silhouette
+        
+        ### How to Use
+        
+        1. Download the image above
+        2. Print as a 5" x 3" sticker 
+        3. Stick it on your radio or camp setup
+        4. Tune in to these awesome stations at Burning Man!
+        
+        ### Stations Included
+        
+        EOF
+        
+        # Add frequency data to the wiki page
+        echo "" >> Radio-Guide.md
+        echo "| Frequency | Station |" >> Radio-Guide.md
+        echo "|-----------|---------|" >> Radio-Guide.md
+        
+        # Parse CSV and add to markdown table
+        tail -n +2 ../freqs.csv | while IFS=',' read -r freq station; do
+          echo "| $freq | $station |" >> Radio-Guide.md
+        done
+        
+        echo "" >> Radio-Guide.md
+        echo "_Last updated: $(date)_" >> Radio-Guide.md
+        
+    - name: Commit and push to wiki
+      run: |
+        cd wiki
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add .
+        git commit -m "Update radio guide - $(date)" || exit 0
+        git push origin master
+        
+    - name: Update main repository with new image
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add radio_guide_2025.jpg
+        git commit -m "Auto-update radio guide image [skip ci]" || exit 0
+        git push origin main 
